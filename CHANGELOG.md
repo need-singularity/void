@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### Removed
+
+- **Retired the double-click URL-open feature entirely (full revert of #36 and
+  #37).** The `mouse-double-click-open-url` config option, the mouse-reporting
+  carve-out (`isReportDoubleClick` / `report_url_double_click_swallow`), and
+  `hasKnownScheme` in `src/config/url.zig` are all gone. Double-clicking a URL
+  selects its text again (pre-#36 behavior); cmd-click open is unchanged.
+
 ### Changed
 
 - **Restructured `ARCHITECTURE.json` into a real hierarchical `children` tree
