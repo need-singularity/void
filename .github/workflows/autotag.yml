@@ -6,6 +6,9 @@ name: autotag
 #   그 외 전부 (fix/docs/...) → patch  (vX.Y.Z+1)   ← 매 push 최소 1칸 보장
 # install.hexa(최신 v* 태그 빌드)가 이 태그를 그대로 소비 → 누구나 동일 최신 빌드.
 # GITHUB_TOKEN 으로 푸시한 태그는 다른 워크플로를 재트리거하지 않음(루프 방지).
+# → so after pushing the tag we dispatch release-fork.yml explicitly:
+#   workflow_dispatch is exempt from that loop-prevention rule, and
+#   release-fork publishes the GitHub Release whenever it runs on a tag ref.
 
 on:
   push:
@@ -13,6 +16,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: autotag-${{ github.ref }}
@@ -29,6 +33,8 @@ jobs:
 
       - name: Compute + push next SemVer tag
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
 
@@ -78,3 +84,10 @@ jobs:
           fi
           git tag "$next" "${GITHUB_SHA}"
           git push origin "$next"
+
+          # GITHUB_TOKEN tag pushes never retrigger tag-triggered workflows
+          # (loop prevention), so fire the release build explicitly.
+          gh workflow run release-fork.yml \
+            --repo "${GITHUB_REPOSITORY}" \
+            --ref "refs/tags/${next}" \
+            -f version="${next}"
