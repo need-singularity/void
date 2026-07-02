@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version for a manual test build (vX.Y.Z). No GitHub Release is published on dispatch."
+        description: "Version for a manual test build (vX.Y.Z). A dispatch on a branch ref publishes no Release; a dispatch on a tag ref does."
         required: false
         default: "0.0.0-dev"
 
@@ -22,8 +22,10 @@ permissions:
 # the tag. No ghostty-org infra (cachix / R2 / appcast / sentry / minisign /
 # Namespace runners) — see release-tag.yml for the upstream Developer-ID path.
 #
-# On a tag push -> builds + publishes the GitHub Release.
-# On workflow_dispatch -> builds + uploads a CI artifact only (validation), no Release.
+# Any run on a tag ref (tag push OR autotag's workflow_dispatch at the tag —
+# GITHUB_TOKEN tag pushes can't retrigger this workflow) -> builds + publishes
+# the GitHub Release. A dispatch on a branch ref -> builds + uploads a CI
+# artifact only (validation), no Release.
 
 concurrency:
   group: ${{ github.workflow }}
@@ -43,12 +45,13 @@ jobs:
       - name: Determine version + build info
         id: info
         run: |
-          if [ "${{ github.event_name }}" = "push" ]; then
-            VERSION="${GITHUB_REF#refs/tags/v}"
-          else
-            VERSION="${{ github.event.inputs.version }}"
-            VERSION="${VERSION#v}"
-          fi
+          case "$GITHUB_REF" in
+            refs/tags/v*) VERSION="${GITHUB_REF#refs/tags/v}" ;;
+            *)
+              VERSION="${{ github.event.inputs.version }}"
+              VERSION="${VERSION#v}"
+              ;;
+          esac
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "build=$(git rev-list --count HEAD)" >> "$GITHUB_OUTPUT"
           echo "commit=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
@@ -120,7 +123,7 @@ jobs:
             Void-macos-universal-${{ steps.info.outputs.version }}.zip
 
       - name: Publish GitHub Release
-        if: github.event_name == 'push'
+        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
         with:
           tag_name: ${{ github.ref_name }}

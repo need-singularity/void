@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- **autotag-created tags now actually produce a GitHub Release.** Tags pushed
+  by autotag's `GITHUB_TOKEN` never retrigger the tag-triggered release
+  workflow (GitHub loop prevention), so v2.0.0–v2.0.8 all shipped no Release.
+  autotag now dispatches `release-fork.yml` explicitly at the new tag ref
+  (workflow_dispatch is exempt from that rule), and release-fork publishes the
+  Release on any tag-ref run instead of only on tag-push events. A dispatch on
+  a branch ref remains a validation build with no Release.
+
 ### Removed
 
 - **Retired the double-click URL-open feature entirely (full revert of #36 and

@@ -327,5 +327,16 @@
         ]
       }
     ]
+  },
+  "convergence": {
+    "records": [
+      {
+        "id": "autotag-yml-1",
+        "state": "pos-conv",
+        "value": "autotag pushes tags with GITHUB_TOKEN, which never retriggers release-fork (GitHub loop-prevention) — tags v2.0.0-v2.0.8 all silently shipped NO release; a release only happens when a tag is pushed with user credentials. Workaround used for v2.1.0: delete + re-push the tag locally.",
+        "threshold": "Recurs on EVERY autotag-created tag until autotag dispatches release-fork explicitly (or a PAT pushes the tag). Detect: tag exists but 'gh release view <tag>' = not found. Fix path: after tag push, 'gh workflow run release-fork.yml' + make release-fork's dispatch path publish the Release.",
+        "source": ".github/workflows/autotag.yml"
+      }
+    ]
   }
 }
